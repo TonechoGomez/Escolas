@@ -1179,45 +1179,47 @@ function exportarDatos() {
 function importarDatos(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             let contenido = e.target.result;
-            
-            // LIMPIEZA: Elimina espacios y caracteres invisibles de Windows (BOM)
-            contenido = contenido.trim().replace(/^\uFEFF/, "");
-            
-            // CONVERSIÓN: Intenta leer el JSON
-            const datos = JSON.parse(contenido);
-            
-            if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos ahora?')) {
-                    // Aseguramos que existan las categorías básicas
-                    if (!datos.Alumnos) datos.Alumnos = [];
-                    if (!datos.Monitores) datos.Monitores = [];
-                    if (!datos.Actividades) datos.Actividades = [];
-                    if (!datos.Aulas) datos.Aulas = [];
 
-                    // Normalizamos datos de alumnos (teléfonos)
-                    datos.Alumnos.forEach(al => {
-                        if (al.phoneList && Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
+            // ELIMINAR CUALQUIER BASURA DEL ARCHIVO
+            // Esto quita el BOM de Windows, espacios al inicio/final y saltos de línea raros
+            contenido = contenido.trim().replace(/^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, "");
+
+            // INTENTAR PARSEAR
+            const datos = JSON.parse(contenido);
+
+            if (datos && typeof datos === 'object') {
+                if (confirm('¿Confirmas que quieres sobrescribir todo con estos datos?')) {
+                    // Garantizar estructura mínima para que la App no se cuelgue
+                    db = {
+                        Monitores: datos.Monitores || [],
+                        Actividades: datos.Actividades || [],
+                        Aulas: datos.Aulas || [],
+                        Alumnos: datos.Alumnos || [],
+                        Config: datos.Config || {}
+                    };
+
+                    // Limpieza de datos de alumnos
+                    db.Alumnos.forEach(al => {
+                        if (Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
                         if (al.tlfs === undefined) al.tlfs = "";
                     });
 
-                    db = datos;
                     saveData();
-                    alert('¡IMPORTACIÓN CORRECTA! La página se actualizará.');
+                    alert('DATOS CARGADOS CON ÉXITO');
                     location.reload();
                 }
-            } else {
-                alert('El archivo no tiene el formato correcto de la App.');
             }
         } catch (err) {
-            console.error("Error al importar:", err);
-            alert('ERROR: El archivo .json está corrupto o mal formado. Intenta exportarlo de nuevo desde el origen.');
+            console.error("Error técnico:", err);
+            alert("ERROR CRÍTICO: El archivo no tiene un formato JSON válido. Comprueba que es el archivo que descargaste de la App.");
         }
     };
-    reader.readAsText(file);
+    reader.readAsText(file, "UTF-8"); // Forzamos lectura en UTF-8
 }
 </script>
 </body>

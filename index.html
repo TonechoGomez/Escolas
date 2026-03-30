@@ -1141,9 +1141,24 @@ function saveAlumnoTlfs(nome) {
         const act = db.Actividades.find(a => (a.nome || "").trim().toUpperCase() === cleanAct);
         if(act) { act.monitor = 'SIN ASIGNAR'; saveData(); openMonitorEdit(idx); }
     }
-function renderConfigView() {
-    const container = document.getElementById('data-container');
-    container.innerHTML = `
+   
+function renderConfig() {
+    const cont = document.getElementById('app-content');
+    // CUADRO DE EMERGENCIA AL PRINCIPIO
+    cont.innerHTML = `
+        <div class="card" style="color:var(--text-main); padding:20px; margin-bottom:20px; border:2px solid red;">
+            <h3 style="color:red; margin-top:0;">🛠️ RECUPERACIÓN DE DATOS</h3>
+            <p style="font-size:0.9rem;">Si el archivo JSON te da error, abre el archivo en tu PC con el <b>Bloc de Notas</b>, copia todo el texto y pégalo aquí debajo:</p>
+            <textarea id="texto-emergencia" style="width:100%; height:80px; border:1px solid #ccc; border-radius:5px; margin-bottom:10px; font-family:monospace; font-size:10px;"></textarea>
+            <button onclick="importacionForzada()" style="background:red; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">
+                FORZAR CARGA DE DATOS
+            </button>
+        </div>
+    `;
+    
+    // AQUÍ CONTINÚA TU CÓDIGO NORMAL DE CONFIGURACIÓN
+    cont.innerHTML += `
+        <div class="card" style="color:var(--text-main); padding:20px;">
         <div class="card" style="padding:20px; text-align:center; max-width:500px; margin: 0 auto;">
             <h2 style="color:var(--melide-primary); margin-top:0;">Copia de Seguridad</h2>
             <p style="color:#475569; font-size:14px; margin-bottom:20px;">
@@ -1221,6 +1236,18 @@ function importarDatos(event) {
     };
     reader.readAsText(file);
 }
+function importacionForzada() {
+    const texto = document.getElementById('texto-emergencia').value;
+    try {
+        const datos = JSON.parse(texto.trim());
+        db = datos;
+        saveData();
+        alert("¡DATOS RECUPERADOS CON ÉXITO!");
+        location.reload();
+    } catch(e) {
+        alert("El texto pegado no es correcto. Asegúrate de copiar TODO lo que hay en el Bloc de Notas.");
+    }
+}    
 </script>
 </body>
 </html> 

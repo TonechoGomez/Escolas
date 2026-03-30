@@ -1189,28 +1189,34 @@ function importarDatos(event) {
         try {
             let contenido = e.target.result;
 
-            // 1. Limpieza total de caracteres invisibles raros
-            contenido = contenido.replace(/[^\x20-\x7E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF\u0009\u000A\u000D]/g, "");
-            
-            // 2. Buscamos dónde empieza y termina el JSON real por si hay basura fuera
-            const inicio = contenido.indexOf('{');
-            const fin = contenido.lastIndexOf('}');
-            if (inicio === -1 || fin === -1) throw new Error("No es un JSON");
-            contenido = contenido.substring(inicio, fin + 1);
+            // 1. Limpieza de espacios y BOM
+            contenido = contenido.trim().replace(/^\uFEFF/, "");
 
+            // 2. DECODIFICACIÓN CRÍTICA: 
+            // Si el archivo viejo se exportó mal, vendrá con símbolos tipo %22 o %20.
+            // Esto intenta "traducirlo" a texto normal.
+            if (contenido.includes('%22') || contenido.includes('%7B')) {
+                try {
+                    contenido = decodeURIComponent(contenido);
+                } catch(e) {
+                    console.log("No era necesario decodificar");
+                }
+            }
+
+            // 3. Intento de lectura
             const datos = JSON.parse(contenido);
 
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos?')) {
+                if (confirm('¿Cargar estos datos ahora?')) {
                     db = datos;
                     saveData();
-                    alert('¡DATOS CARGADOS!');
+                    alert('¡IMPORTACIÓN CORRECTA!');
                     location.reload();
                 }
             }
         } catch (err) {
-            console.error(err);
-            alert('ERROR: El archivo no es compatible. Intenta abrirlo en el PC y guardarlo como "UTF-8" o exportarlo de nuevo con el nuevo código.');
+            console.error("Error al leer:", err);
+            alert('ERROR: El contenido del archivo sigue siendo ilegible. Vamos a intentar el Plan B.');
         }
     };
     reader.readAsText(file);

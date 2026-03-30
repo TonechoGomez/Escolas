@@ -1167,7 +1167,6 @@ function renderConfigView() {
     `;
 }
 function exportarDatos() {
-    // Usamos un formato de texto simple para evitar errores de codificación
     const dataStr = JSON.stringify(db, null, 2);
     const blob = new Blob([dataStr], {type: "application/json"});
     const url = URL.createObjectURL(blob);
@@ -1178,7 +1177,6 @@ function exportarDatos() {
     linkElement.download = nombreArchivo;
     linkElement.click();
     
-    // Limpiamos la memoria
     setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 

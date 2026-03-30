@@ -1144,17 +1144,38 @@ function saveAlumnoTlfs(nome) {
    
 function renderConfig() {
     const cont = document.getElementById('app-content');
-    // CUADRO DE EMERGENCIA AL PRINCIPIO
-    cont.innerHTML = `
-        <div class="card" style="color:var(--text-main); padding:20px; margin-bottom:20px; border:2px solid red;">
+    if (!cont) return;
+
+    // 1. Definimos el cuadro de emergencia
+    const cuadroEmergencia = `
+        <div class="card" style="color:#1e293b; padding:20px; margin-bottom:20px; border:2px solid red; background:white;">
             <h3 style="color:red; margin-top:0;">🛠️ RECUPERACIÓN DE DATOS</h3>
-            <p style="font-size:0.9rem;">Si el archivo JSON te da error, abre el archivo en tu PC con el <b>Bloc de Notas</b>, copia todo el texto y pégalo aquí debajo:</p>
+            <p style="font-size:0.9rem;">Si el archivo JSON da error, pega aquí el texto del Bloc de Notas:</p>
             <textarea id="texto-emergencia" style="width:100%; height:80px; border:1px solid #ccc; border-radius:5px; margin-bottom:10px; font-family:monospace; font-size:10px;"></textarea>
             <button onclick="importacionForzada()" style="background:red; color:white; padding:12px; border:none; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;">
                 FORZAR CARGA DE DATOS
             </button>
         </div>
     `;
+
+    // 2. Definimos el resto de la configuración original
+    const contenidoNormal = `
+        <div class="card" style="color:#1e293b; padding:20px; background:white;">
+            <h3 style="margin-top:0">Configuración de Sistema</h3>
+            <div style="display:grid; gap:10px;">
+                <button class="btn-main" onclick="document.getElementById('import-file').click()" style="width:100%">📥 Importar Datos (JSON)</button>
+                <input type="file" id="import-file" style="display:none" accept=".json" onchange="importarDatos(event)">
+                <button class="btn-main" onclick="exportarDatos()" style="width:100%; background:#059669">📤 Exportar Backup</button>
+                <button class="btn-main" onclick="generarInformeGlobal()" style="width:100%; background:#7c3aed">📋 Informe Global (PDF)</button>
+                <button class="btn-main" onclick="window.location.reload()" style="width:100%; background:#64748b">🔄 Refrescar App</button>
+                <button class="btn-main" onclick="borrarTodo()" style="width:100%; background:#dc2626">⚠️ Borrar Todo</button>
+            </div>
+        </div>
+    `;
+
+    // 3. Lo juntamos todo y lo inyectamos
+    cont.innerHTML = cuadroEmergencia + contenidoNormal;
+}
     
     // AQUÍ CONTINÚA TU CÓDIGO NORMAL DE CONFIGURACIÓN
     cont.innerHTML += `
@@ -1237,15 +1258,22 @@ function importarDatos(event) {
     reader.readAsText(file);
 }
 function importacionForzada() {
-    const texto = document.getElementById('texto-emergencia').value;
+    const textarea = document.getElementById('texto-emergencia');
+    if (!textarea) return;
+    const texto = textarea.value.trim();
+    
+    if (!texto) {
+        alert("Por favor, pega el texto primero.");
+        return;
+    }
     try {
-        const datos = JSON.parse(texto.trim());
+        const datos = JSON.parse(texto);
         db = datos;
         saveData();
-        alert("¡DATOS RECUPERADOS CON ÉXITO!");
+        alert("¡DATOS RECUPERADOS!");
         location.reload();
     } catch(e) {
-        alert("El texto pegado no es correcto. Asegúrate de copiar TODO lo que hay en el Bloc de Notas.");
+        alert("Error: El texto pegado no es válido. Revisa que hayas copiado todo desde el { hasta el }.");
     }
 }    
 </script>

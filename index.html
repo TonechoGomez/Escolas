@@ -1183,24 +1183,38 @@ function importarDatos(event) {
     reader.onload = function(e) {
         try {
             let contenido = e.target.result;
-            // Limpia caracteres invisibles que rompen el JSON
-            contenido = contenido.replace(/^\uFEFF/, ""); 
+            
+            // LIMPIEZA: Elimina espacios y caracteres invisibles de Windows (BOM)
+            contenido = contenido.trim().replace(/^\uFEFF/, "");
+            
+            // CONVERSIÓN: Intenta leer el JSON
             const datos = JSON.parse(contenido);
+            
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos?')) {
-                    db = datos;
-                    if(!db.Alumnos) db.Alumnos = [];
-                    db.Alumnos.forEach(al => {
+                if (confirm('¿Cargar estos datos ahora?')) {
+                    // Aseguramos que existan las categorías básicas
+                    if (!datos.Alumnos) datos.Alumnos = [];
+                    if (!datos.Monitores) datos.Monitores = [];
+                    if (!datos.Actividades) datos.Actividades = [];
+                    if (!datos.Aulas) datos.Aulas = [];
+
+                    // Normalizamos datos de alumnos (teléfonos)
+                    datos.Alumnos.forEach(al => {
                         if (al.phoneList && Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
                         if (al.tlfs === undefined) al.tlfs = "";
                     });
+
+                    db = datos;
                     saveData();
-                    alert('¡IMPORTACIÓN CORRECTA!');
+                    alert('¡IMPORTACIÓN CORRECTA! La página se actualizará.');
                     location.reload();
                 }
+            } else {
+                alert('El archivo no tiene el formato correcto de la App.');
             }
         } catch (err) {
-            alert('ERROR: El archivo no es válido o tiene un formato de texto incorrecto.');
+            console.error("Error al importar:", err);
+            alert('ERROR: El archivo .json está corrupto o mal formado. Intenta exportarlo de nuevo desde el origen.');
         }
     };
     reader.readAsText(file);

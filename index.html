@@ -1167,13 +1167,19 @@ function renderConfigView() {
     `;
 }
 function exportarDatos() {
+    // Usamos un formato de texto simple para evitar errores de codificación
     const dataStr = JSON.stringify(db, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    
     const nombreArchivo = 'backup_escolas_' + new Date().toISOString().slice(0,10) + '.json';
-    let linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', nombreArchivo);
+    const linkElement = document.createElement('a');
+    linkElement.href = url;
+    linkElement.download = nombreArchivo;
     linkElement.click();
+    
+    // Limpiamos la memoria
+    setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function importarDatos(event) {
@@ -1185,41 +1191,31 @@ function importarDatos(event) {
         try {
             let contenido = e.target.result;
 
-            // ELIMINAR CUALQUIER BASURA DEL ARCHIVO
-            // Esto quita el BOM de Windows, espacios al inicio/final y saltos de línea raros
-            contenido = contenido.trim().replace(/^[\u200B\u200C\u200D\u200E\u200F\uFEFF]/, "");
+            // 1. Limpieza total de caracteres invisibles raros
+            contenido = contenido.replace(/[^\x20-\x7E\u00A0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF\u0009\u000A\u000D]/g, "");
+            
+            // 2. Buscamos dónde empieza y termina el JSON real por si hay basura fuera
+            const inicio = contenido.indexOf('{');
+            const fin = contenido.lastIndexOf('}');
+            if (inicio === -1 || fin === -1) throw new Error("No es un JSON");
+            contenido = contenido.substring(inicio, fin + 1);
 
-            // INTENTAR PARSEAR
             const datos = JSON.parse(contenido);
 
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Confirmas que quieres sobrescribir todo con estos datos?')) {
-                    // Garantizar estructura mínima para que la App no se cuelgue
-                    db = {
-                        Monitores: datos.Monitores || [],
-                        Actividades: datos.Actividades || [],
-                        Aulas: datos.Aulas || [],
-                        Alumnos: datos.Alumnos || [],
-                        Config: datos.Config || {}
-                    };
-
-                    // Limpieza de datos de alumnos
-                    db.Alumnos.forEach(al => {
-                        if (Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
-                        if (al.tlfs === undefined) al.tlfs = "";
-                    });
-
+                if (confirm('¿Cargar estos datos?')) {
+                    db = datos;
                     saveData();
-                    alert('DATOS CARGADOS CON ÉXITO');
+                    alert('¡DATOS CARGADOS!');
                     location.reload();
                 }
             }
         } catch (err) {
-            console.error("Error técnico:", err);
-            alert("ERROR CRÍTICO: El archivo no tiene un formato JSON válido. Comprueba que es el archivo que descargaste de la App.");
+            console.error(err);
+            alert('ERROR: El archivo no es compatible. Intenta abrirlo en el PC y guardarlo como "UTF-8" o exportarlo de nuevo con el nuevo código.');
         }
     };
-    reader.readAsText(file, "UTF-8"); // Forzamos lectura en UTF-8
+    reader.readAsText(file);
 }
 </script>
 </body>

@@ -224,7 +224,7 @@
     let userRole = 'tecnico';
     const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Lunes-Miércoles", "Martes-Jueves"];
     
-    let db = JSON.parse(localStorage.getItem('melide_db')) || { 
+    const db = JSON.parse(localStorage.getItem('melide_db')) || { 
         Monitores: [], 
         Aulas: [{nome: 'PARROQUIAS', espacios:["MACEDA", "FURELOS", "MOLDES", "GROBAS", "SANTALLA", "SAN MARTIÑO", "SAN SALVADOR"]}], 
         Actividades: [], 
@@ -267,78 +267,76 @@
         });
     }
 
-   function toggleMonitorLogin(val) {
-    const area = document.getElementById('login-monitor-area');
-    const sel = document.getElementById('id-monitor-login');
-    if (val === 'monitor') {
-        area.style.display = 'block';
-        sel.innerHTML = db.Monitores.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
-    } else {
-        area.style.display = 'none';
+    function toggleMonitorLogin() {
+    const role = document.getElementById('user-role').value;
+    const monitorSelect = document.getElementById('login-monitor-select');
+    if (monitorSelect) {
+        monitorSelect.style.display = (role === 'monitor') ? 'block' : 'none';
     }
 }
 
 function login() {
-    try {
-        const roleElem = document.getElementById('user-role');
-        if (!roleElem) return;
-        
-        userRole = roleElem.value;
-        const monitorElem = document.getElementById('id-monitor-login');
-        
-        // Determinamos si es técnico o monitor específico
-        monitorActivo = (userRole === 'monitor' && monitorElem) ? monitorElem.value : 'todos';
+    userRole = document.getElementById('user-role').value;
+    const monitorElem = document.getElementById('id-monitor-login');
+    monitorActivo = (userRole === 'monitor' && monitorElem) ? monitorElem.value : 'todos';
 
-        const menu = document.getElementById('menu-container');
-        if (!menu) return;
-        
-        menu.innerHTML = '';
+    const menu = document.getElementById('menu-container');
+    if (!menu) return;
+    menu.innerHTML = '';
 
-        // Definición de pestañas (CORREGIDA LA COMA FALTANTE)
-        let tabs = [
-            {id: 'Monitores', icon: '👥'}, 
-            {id: 'Actividades', icon: '🏆'}, 
-            {id: 'Aulas', icon: '🏠'}, 
-            {id: 'Alumnos', icon: '🎓'}, 
-            {id: 'Horarios', icon: '🗓️'}
-        ];
+    let tabs = [
+        {id: 'Monitores', icon: '👥'}, 
+        {id: 'Actividades', icon: '🏆'}, 
+        {id: 'Aulas', icon: '🏠'}, 
+        {id: 'Alumnos', icon: '🎓'}, 
+        {id: 'Horarios', icon: '🗓️'}
+    ];
 
-        // Solo añadimos Configuración si es Técnico
-        if (userRole === 'tecnico') {
-            tabs.push({id: 'Config', icon: '⚙️'});
-        }
-
-        tabs.forEach(tab => {
-            const card = document.createElement('div');
-            card.className = 'menu-card';
-            card.onclick = function() { renderSection(tab.id); };
-            card.innerHTML = `<div style="font-size:2.2rem">${tab.icon}</div><h3>${tab.id}</h3>`;
-            menu.appendChild(card);
-        });
-
-        // Cambiar de pantalla
-        nav('scr-dash');
-        console.log("Login exitoso como:", userRole, "Monitor:", monitorActivo);
-
-    } catch (error) {
-        console.error("Error crítico en login:", error);
-        alert("Error de ejecución. Revisa que no falten llaves en el código.");
+    if (userRole === 'tecnico') {
+        tabs.push({id: 'Config', icon: '⚙️'});
     }
+
+    tabs.forEach(tab => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+        card.onclick = function() { renderSection(tab.id); };
+        card.innerHTML = `<div style="font-size:2.2rem">${tab.icon}</div><h3>${tab.id}</h3>`;
+        menu.appendChild(card);
+    });
+
+    nav('scr-dash');
 }
 
-        tabs.forEach(tab => {
-            const card = document.createElement('div');
-            card.className = 'menu-card';
-            card.onclick = function() { renderSection(tab.id); };
-            card.innerHTML = `<div style="font-size:2.2rem">${tab.icon}</div><h3>${tab.id}</h3>`;
-            menu.appendChild(card);
-        });
+    function login() {
+    userRole = document.getElementById('user-role').value;
+    const monitorSelect = document.getElementById('id-monitor-login');
+    monitorActivo = (userRole === 'monitor' && monitorSelect) ? monitorSelect.value : 'todos';
 
-        nav('scr-dash');
-    } catch (error) {
-        console.error("Error en el login:", error);
-        alert("Hubo un error al entrar. Por favor, refresca la página.");
+    const menu = document.getElementById('menu-container');
+    if (!menu) return;
+    menu.innerHTML = '';
+
+    let tabs = [
+        {id: 'Monitores', icon: '👥'}, 
+        {id: 'Actividades', icon: '🏆'}, 
+        {id: 'Aulas', icon: '🏠'}, 
+        {id: 'Alumnos', icon: '🎓'}, 
+        {id: 'Horarios', icon: '🗓️'}
+    ];
+
+    if (userRole === 'tecnico') {
+        tabs.push({id: 'Config', icon: '⚙️'});
     }
+
+    tabs.forEach(tab => {
+        const card = document.createElement('div');
+        card.className = 'menu-card';
+        card.onclick = function() { renderSection(tab.id); };
+        card.innerHTML = `<div style="font-size:2.2rem">${tab.icon}</div><h3>${tab.id}</h3>`;
+        menu.appendChild(card);
+    });
+
+    nav('scr-dash');
 }
 
     function logout() { nav('scr-inicio'); }
@@ -793,8 +791,6 @@ function sendMassiveWhatsApp(act, dia, hora) {
     setTimeout(updateHorarioFilter, 50);
 }
 
-// --- BLOQUE CORREGIDO: CUADRANTE DE HORARIOS (DOBLE VISTA) ---
-
 function updateHorarioFilter() {
     const filter = document.getElementById('h-filter')?.value || 'todo';
     const res = document.getElementById('horario-resultado');
@@ -804,7 +800,6 @@ function updateHorarioFilter() {
 
     if (!res || !gen || !layout) return;
 
-    // Configuración visual del contenedor
     const aplicarEstiloCaja = (div, alto) => {
         div.style.width = "100%";
         div.style.height = alto;
@@ -816,72 +811,17 @@ function updateHorarioFilter() {
     };
 
     if (filter !== 'todo') {
+        // ACTIVAR DOBLE COLUMNA
         layout.style.gridTemplateColumns = "1fr 1fr";
         colFiltro.style.display = "block";
-        aplicarEstiloCaja(res, "80vh");
+        aplicarEstiloCaja(res, "80vh"); // Tamaño igual al general
         aplicarEstiloCaja(gen, "80vh");
     } else {
+        // SOLO GENERAL
         layout.style.gridTemplateColumns = "1fr";
         colFiltro.style.display = "none";
         aplicarEstiloCaja(gen, "80vh");
     }
-
-    const horasVisuales = ["09:00", "10:00", "11:00", "12:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"];
-    const diasPrincipales = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-
-    const generarTabla = (listaActividades, titulo, color) => {
-        let html = `<div style="background:${color}; color:white; padding:10px; font-weight:bold; font-size:13px; text-align:center; position:sticky; top:0; left:0; z-index:25;">${titulo}</div>`;
-        
-        html += `<table style="width:100%; min-width:600px; border-collapse:collapse; background:white; color:black; table-layout: fixed;">
-            <thead>
-                <tr style="background:#f1f5f9; color:#005696; position:sticky; top:33px; z-index:24;">
-                    <th style="width:60px; padding:6px; border:1px solid #ddd; font-size:10px; position:sticky; left:0; background:#f1f5f9; z-index:26;">HORA</th>`;
-        diasPrincipales.forEach(d => html += `<th style="width:108px; padding:6px; border:1px solid #ddd; font-size:10px;">${d.toUpperCase()}</th>`);
-        html += `</tr></thead><tbody>`;
-
-        horasVisuales.forEach(h => {
-            html += `<tr>
-                <td style="font-weight:bold; background:#f8fafc; color:#005696; text-align:center; border:1px solid #ddd; font-size:11px; padding:0; height:100px; position:sticky; left:0; z-index:23;">${h}</td>`;
-            
-            diasPrincipales.forEach(d => {
-                const items = listaActividades.filter(ac => {
-                    if (!ac || !ac.nome) return false;
-                    const coincideDia = ac.dia === d || (ac.dia && ac.dia.includes(d));
-                    const coincideHora = ac.hora && ac.hora.startsWith(h.substring(0,2));
-                    return coincideDia && coincideHora;
-                });
-
-                html += `<td style="vertical-align:top; border:1px solid #ddd; padding:3px; height:100px;">`;
-                items.forEach(i => {
-                    html += `
-                    <div style="background:#0ea5e9; color:white; padding:4px; border-radius:5px; font-size:9px; line-height:1.1; border:1px solid #0284c7; margin-bottom:3px; overflow:hidden; min-height:30px;">
-                        <div style="font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${i.nome}</div>
-                        <div style="font-size:8px; opacity:0.9;">${i.aula || 'S.A.'}</div>
-                    </div>`;
-                });
-                html += `</td>`;
-            });
-            html += `</tr>`;
-        });
-        return html + `</tbody></table>`;
-    };
-
-    // 1. Dibujar Cuadrante General
-    const todasLasActividades = db.Actividades.filter(a => a.aula && a.aula !== 'POR DEFINIR');
-    gen.innerHTML = generarTabla(todasLasActividades, "CUADRANTE GENERAL", "#475569");
-
-    // 2. Dibujar Vista Filtrada si aplica
-    if (filter !== 'todo') {
-        const parts = filter.split(':');
-        const val = (parts[1] || "").trim().toUpperCase();
-        let filtrados = todasLasActividades.filter(a => {
-            if (parts[0] === 'm') return (a.monitor || "").trim().toUpperCase() === val;
-            if (parts[0] === 'l') return (a.aula || "").trim().toUpperCase() === val;
-            return false;
-        });
-        res.innerHTML = generarTabla(filtrados, "VISTA FILTRADA", "#005696");
-    }
-}
 
     const horasVisuales = ["09:00", "10:00", "11:00", "12:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"];
     const diasPrincipales = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
@@ -991,62 +931,34 @@ function goToActivity(index) {
 
    
 // --- SISTEMA DE ASISTENCIA V121 (CORREGIDO) ---
-// --- SISTEMA DE ASISTENCIA CORREGIDO ---
 function openAsistencia(actNome) {
+    console.log("Abriendo lista extendida para:", actNome);
     const cleanAct = actNome.trim().toUpperCase();
+    
+    // Obtenemos todos los alumnos de esta actividad
     const todos = db.Alumnos.filter(a => (a.act || "").trim().toUpperCase() === cleanAct);
     
-    // Separación por estados para claridad visual
+    // Los separamos por grupos
     const admitidos = todos.filter(a => a.status === 'admitido' || !a.status);
     const espera = todos.filter(a => a.status === 'espera');
+    const baja = todos.filter(a => a.status === 'baja');
 
-    let html = `<h3>Lista: ${actNome}</h3>`;
+    const hoy = new Date().toLocaleDateString();
+    let html = `<h3>Lista: ${actNome}</h3><p style="margin-top:-10px; color:gray;">${hoy}</p>`;
     
-    html += `<div style="border-left:4px solid #2563eb; padding-left:10px; font-weight:bold; color:#2563eb; margin-bottom:10px;">ADMITIDOS</div>`;
-    
-    admitidos.forEach(al => {
-        // Buscamos el índice real en la DB para guardar cambios
-        const realIdx = db.Alumnos.findIndex(dbAl => dbAl.nome === al.nome && dbAl.act === al.act);
-        
-        html += `
-        <div class="asistencia-row" onclick="toggleAsisRow(this, ${realIdx})" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; background: white; margin-bottom: 4px; border-radius: 8px; color: black;">
-            <span style="font-weight: 500;">${al.nome}</span>
-            <span class="status-badge" style="background:#f1f5f9; color:#64748b; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; font-weight: bold;">PENDIENTE</span>
-        </div>`;
-    });
-
-    if(espera.length > 0) {
-        html += `<div style="margin-top:20px; border-left:4px solid #ca8a04; padding-left:10px; font-weight:bold; color:#ca8a04;">LISTA DE ESPERA</div>`;
-        espera.forEach(al => {
-            html += `<div style="padding:10px; color:#854d0e; font-size:0.9rem;">• ${al.nome}</div>`;
+    // SECCIÓN 1: ADMITIDOS (Con opción a pasar lista)
+    html += `<div style="margin-top:15px; border-left:4px solid #2563eb; padding-left:10px; font-weight:bold; color:#2563eb;">ADMITIDOS</div>`;
+    if(admitidos.length === 0) {
+        html += `<p style="color:gray; padding:10px; font-size:0.9rem;">No hay alumnos admitidos.</p>`;
+    } else {
+        admitidos.forEach(al => {
+            html += `
+            <div class="asistencia-row" onclick="toggleAsisRow(this)" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; background: white; margin-bottom: 4px; border-radius: 8px;">
+                <span style="font-weight: 500;">${al.nome}</span>
+                <span class="status-badge" style="background:#f1f5f9; color:#64748b; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; font-weight: bold;">PENDIENTE</span>
+            </div>`;
         });
     }
-    
-    document.getElementById('modal-body').innerHTML = html + `<button class="btn" onclick="closeModal()" style="margin-top:20px;">CERRAR</button>`;
-    document.getElementById('modal-overlay').classList.add('active');
-}
-
-function toggleAsisRow(el, idx) {
-    const badge = el.querySelector('.status-badge');
-    const estados = [
-        { txt: 'PENDIENTE', bg: '#f1f5f9', col: '#64748b' },
-        { txt: 'PRESENTE', bg: '#dcfce7', col: '#166534' },
-        { txt: 'AUSENTE', bg: '#fee2e2', col: '#991b1b' }
-    ];
-    
-    let actualIdx = estados.findIndex(e => e.txt === badge.innerText);
-    let sig = estados[(actualIdx + 1) % estados.length];
-    
-    badge.innerText = sig.txt;
-    badge.style.background = sig.bg;
-    badge.style.color = sig.col;
-
-    // Opcional: Si quieres guardar el histórico de hoy en la DB
-    const hoy = new Date().toLocaleDateString();
-    if(!db.Alumnos[idx].asistencias) db.Alumnos[idx].asistencias = {};
-    db.Alumnos[idx].asistencias[hoy] = sig.txt;
-    saveData();
-}
 
     // SECCIÓN 2: LISTA DE ESPERA (Solo lectura)
     if(espera.length > 0) {
@@ -1097,26 +1009,25 @@ function toggleAsisRow(el) {
         }
     }
 
-   // --- BLOQUE CORREGIDO: GESTIÓN DE TELÉFONOS (FICHA ALUMNO) ---
-
-function openAlumnoDetail(idx) {
+   function openAlumnoDetail(idx) {
     const al = db.Alumnos[idx];
     const cleanNome = al.nome.trim().toUpperCase();
+    const misActs = db.Alumnos.filter(a => a.nome.trim().toUpperCase() === cleanNome).map(a => a.act);
     
-    // Recuperamos los teléfonos y los separamos por el carácter '|'
     let tlfsArray = al.tlfs ? al.tlfs.split('|').filter(t => t.trim() !== "") : [""];
     if (tlfsArray.length === 0) tlfsArray = [""];
 
     let html = `<h3>Ficha: ${al.nome}</h3>
+        <p style="font-size:0.9rem; color:#64748b; margin-bottom:15px;"><strong>Inscrito en:</strong> ${misActs.join(', ')}</p>
+        
         <label>Listado de Teléfonos / Contactos</label>
         <div id="tlf-container">`;
     
-    // Generamos un input por cada teléfono encontrado
-    tlfsArray.forEach((t) => {
+    tlfsArray.forEach((t, i) => {
         html += `
         <div style="display:flex; gap:5px; margin-bottom:8px;">
-            <input type="text" class="alumno-tlf-input" value="${t}" placeholder="Ej: 600000000 (Padre)" style="flex:1;">
-            <button onclick="this.parentElement.remove()" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; padding:0 12px; cursor:pointer; font-weight:bold;">✕</button>
+            <input type="text" class="alumno-tlf-input" value="${t}" placeholder="Ej: 600000000 (Padre)">
+            <button onclick="this.parentElement.remove()" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; padding:0 12px; cursor:pointer;">✕</button>
         </div>`;
     });
 
@@ -1131,44 +1042,6 @@ function openAlumnoDetail(idx) {
     document.getElementById('modal-overlay').classList.add('active');
 }
 
-function addTlfField() {
-    const container = document.getElementById('tlf-container');
-    const div = document.createElement('div');
-    div.style = "display:flex; gap:5px; margin-bottom:8px;";
-    div.innerHTML = `
-        <input type="text" class="alumno-tlf-input" value="" placeholder="Nuevo teléfono..." style="flex:1;">
-        <button onclick="this.parentElement.remove()" style="background:#fee2e2; color:#ef4444; border:none; border-radius:8px; padding:0 12px; cursor:pointer; font-weight:bold;">✕</button>
-    `;
-    container.appendChild(div);
-}
-
-function saveAlumnoTlfs(nome) {
-    const cleanNome = nome.trim().toUpperCase();
-    const inputs = document.querySelectorAll('.alumno-tlf-input');
-    
-    // Unimos todos los teléfonos con el separador |
-    const tlfsNuevos = Array.from(inputs)
-        .map(i => i.value.trim())
-        .filter(t => t !== "")
-        .join('|'); 
-
-    // Actualizamos al alumno en todas sus inscripciones
-    let encontrado = false;
-    db.Alumnos.forEach(a => {
-        if (a.nome.trim().toUpperCase() === cleanNome) {
-            a.tlfs = tlfsNuevos;
-            encontrado = true;
-        }
-    });
-
-    if(encontrado) {
-        saveData();
-        closeModal();
-        // Intentamos refrescar la vista actual si existe la función
-        if (typeof filterCurrentData === 'function') filterCurrentData();
-        alert("Datos de contacto actualizados correctamente");
-    }
-}
 // --- NUEVAS FUNCIONES DE CONTROL DE TELÉFONOS ---
 
 function addTlfField() {
@@ -1268,138 +1141,70 @@ function saveAlumnoTlfs(nome) {
         const act = db.Actividades.find(a => (a.nome || "").trim().toUpperCase() === cleanAct);
         if(act) { act.monitor = 'SIN ASIGNAR'; saveData(); openMonitorEdit(idx); }
     }
-   
-function renderConfig() {
-    const cont = document.getElementById('data-container');
-    if (!cont) return;
-
-    let html = `
-        <div style="background:white; padding:20px; border-radius:15px; color:black; margin-bottom:20px; border:2px solid #ef4444;">
-            <h3 style="color:#ef4444; margin-top:0;">🛠️ RECUPERACIÓN DE DATOS (IMPORTAR)</h3>
-            <p style="font-size:0.8rem; color:#64748b;">Pega aquí el código de un backup previo para restaurar el sistema.</p>
-            <textarea id="texto-emergencia" style="width:100%; height:100px; border:1px solid #ddd; border-radius:8px; padding:10px; font-family:monospace; font-size:10px;" placeholder="Pegue aquí el JSON..."></textarea>
-            <button onclick="importacionForzada()" style="background:#ef4444; color:white; padding:12px; border:none; border-radius:8px; width:100%; margin-top:10px; cursor:pointer; font-weight:bold;">FORZAR CARGA DE DATOS</button>
-        </div>
-
-        <div style="background:white; padding:20px; border-radius:15px; color:black;">
-            <h3 style="margin-top:0">GESTIÓN DE COPIAS Y SISTEMA</h3>
-            <button class="btn" onclick="exportarDatos()" style="width:100%; background:#059669; margin-bottom:10px; color:white;">📤 EXPORTAR BACKUP (JSON)</button>
-            <button class="btn" onclick="borrarTodo()" style="width:100%; background:#dc2626; color:white;">⚠️ BORRAR TODA LA BASE DE DATOS</button>
+function renderConfigView() {
+    const container = document.getElementById('data-container');
+    container.innerHTML = `
+        <div class="card" style="padding:20px; text-align:center; max-width:500px; margin: 0 auto;">
+            <h2 style="color:var(--melide-primary); margin-top:0;">Copia de Seguridad</h2>
+            <p style="color:#475569; font-size:14px; margin-bottom:20px;">
+                Usa estas opciones para mover tus datos entre dispositivos (PC, Móvil o Tablet).
+            </p>
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <button onclick="exportarDatos()" style="background:#10b981; color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; font-size:16px;">
+                    📥 EXPORTAR DATOS (.json)
+                </button>
+                <div style="border:2px dashed #cbd5e1; padding:20px; border-radius:10px; background:#f8fafc;">
+                    <label style="display:block; margin-bottom:10px; font-weight:bold; color:var(--text-main);">IMPORTAR ARCHIVO:</label>
+                    <input type="file" id="importFile" accept=".json" onchange="importarDatos(event)" style="font-size:12px; width:100%;">
+                </div>
+            </div>
+            <hr style="margin:30px 0; border:0; border-top:1px solid #e2e8f0;">
+            <button onclick="if(confirm('¿BORRAR TODO?')){localStorage.clear(); location.reload();}" 
+                    style="background:#ef4444; color:white; padding:10px; border:none; border-radius:8px; font-size:12px; opacity:0.6; cursor:pointer;">
+                Borrar base de datos local
+            </button>
         </div>
     `;
-    cont.innerHTML = html;
 }
-
 function exportarDatos() {
     const dataStr = JSON.stringify(db, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup_escolas_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-}
-
-function importacionForzada() {
-    const txt = document.getElementById('texto-emergencia').value;
-    try {
-        const parsed = JSON.parse(txt);
-        if (parsed.Alumnos && parsed.Actividades) {
-            db = parsed;
-            saveData();
-            alert("Datos importados con éxito.");
-            location.reload();
-        } else {
-            alert("El formato del JSON no es válido.");
-        }
-    } catch (e) {
-        alert("Error al procesar el texto. Asegúrate de que sea un JSON válido.");
-    }
-}
-
-function borrarTodo() {
-    if (confirm("¿ESTÁS SEGURO? Se borrarán todos los alumnos, monitores y actividades. Esta acción es irreversible.")) {
-        db = { Monitores: [], Aulas: [], Actividades: [], Alumnos: [] };
-        saveData();
-        location.reload();
-    }
-}
-    
-   
-function exportarDatos() {
-    const dataStr = JSON.stringify(db, null, 2);
-    const blob = new Blob([dataStr], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
-    
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     const nombreArchivo = 'backup_escolas_' + new Date().toISOString().slice(0,10) + '.json';
-    const linkElement = document.createElement('a');
-    linkElement.href = url;
-    linkElement.download = nombreArchivo;
+    let linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', nombreArchivo);
     linkElement.click();
-    
-    setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 function importarDatos(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
             let contenido = e.target.result;
-
-            // 1. Limpieza de espacios y BOM
-            contenido = contenido.trim().replace(/^\uFEFF/, "");
-
-            // 2. DECODIFICACIÓN CRÍTICA: 
-            // Si el archivo viejo se exportó mal, vendrá con símbolos tipo %22 o %20.
-            // Esto intenta "traducirlo" a texto normal.
-            if (contenido.includes('%22') || contenido.includes('%7B')) {
-                try {
-                    contenido = decodeURIComponent(contenido);
-                } catch(e) {
-                    console.log("No era necesario decodificar");
-                }
-            }
-
-            // 3. Intento de lectura
+            // Limpia caracteres invisibles que rompen el JSON
+            contenido = contenido.replace(/^\uFEFF/, ""); 
             const datos = JSON.parse(contenido);
-
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos ahora?')) {
+                if (confirm('¿Cargar estos datos?')) {
                     db = datos;
+                    if(!db.Alumnos) db.Alumnos = [];
+                    db.Alumnos.forEach(al => {
+                        if (al.phoneList && Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
+                        if (al.tlfs === undefined) al.tlfs = "";
+                    });
                     saveData();
                     alert('¡IMPORTACIÓN CORRECTA!');
                     location.reload();
                 }
             }
         } catch (err) {
-            console.error("Error al leer:", err);
-            alert('ERROR: El contenido del archivo sigue siendo ilegible. Vamos a intentar el Plan B.');
+            alert('ERROR: El archivo no es válido o tiene un formato de texto incorrecto.');
         }
     };
     reader.readAsText(file);
 }
-function importacionForzada() {
-    const textarea = document.getElementById('texto-emergencia');
-    if (!textarea) return;
-    const texto = textarea.value.trim();
-    
-    if (!texto) {
-        alert("Por favor, pega el texto primero.");
-        return;
-    }
-    try {
-        const datos = JSON.parse(texto);
-        db = datos;
-        saveData();
-        alert("¡DATOS RECUPERADOS!");
-        location.reload();
-    } catch(e) {
-        alert("Error: El texto pegado no es válido. Revisa que hayas copiado todo desde el { hasta el }.");
-    }
-}    
 </script>
 </body>
-</html> 
+</html>

@@ -168,6 +168,16 @@
             .btn-mini { padding: 8px 10px; min-width: 38px; min-height: 38px; font-size: 1rem; }
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    databaseURL: "https://escolas-melide-default-rtdb.europe-west1.firebasedatabase.app/"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const dbRef = firebase.database().ref('melide_db');
+</script>
 </head>
 <body>
 
@@ -224,12 +234,29 @@
     let userRole = 'tecnico';
     const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Lunes-Miércoles", "Martes-Jueves"];
     
-    const db = JSON.parse(localStorage.getItem('melide_db')) || { 
-        Monitores: [], 
-        Aulas: [{nome: 'PARROQUIAS', espacios:["MACEDA", "FURELOS", "MOLDES", "GROBAS", "SANTALLA", "SAN MARTIÑO", "SAN SALVADOR"]}], 
-        Actividades: [], 
-        Alumnos: [] 
-    };
+    // --- NOVO BLOQUE PARA FIREBASE ---
+let db = { 
+    Monitores: [], 
+    Aulas: [{nome: 'PARROQUIAS', espacios:["MACEDA", "FURELOS", "MOLDES", "GROBAS", "SANTALLA", "SAN MARTIÑO", "SAN SALVADOR"]}], 
+    Actividades: [], 
+    Alumnos: [] 
+};
+
+// Escoitar cambios en tempo real desde Google Firebase
+dbRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        db = data;
+        console.log("Sincronizado coa nube de Melide");
+        // Esta función "pinta" de novo toda a web cos datos que acaban de chegar
+        if (typeof renderAll === 'function') {
+            renderAll(); 
+        }
+    } else {
+        console.log("A nube está baleira. Carga o teu JSON en Configuración.");
+    }
+});
+// ---------------------------------
 
     // AUTO-REPARACIÓN DE DATOS (Se ejecuta al cargar para limpiar errores previos)
     function repairDB() {
@@ -249,9 +276,11 @@
     }
     repairDB();
     
-    function saveData() { 
-        localStorage.setItem('melide_db', JSON.stringify(db)); 
-    }
+    function saveData() {
+    // Seguimos guardando en local por seguridad, pero también enviamos a la nube
+    localStorage.setItem('melide_db', JSON.stringify(db));
+    dbRef.set(db); 
+}
 
     function closeModal() {
         document.getElementById('modal-overlay').classList.remove('active');
@@ -1204,6 +1233,34 @@ function importarDatos(event) {
         }
     };
     reader.readAsText(file);
+}
+    // --- FORZAR CONEXIÓN FIREBASE AL FINAL DEL ARCHIVO ---
+if (typeof firebase !== 'undefined') {
+    const firebaseConfig = {
+        databaseURL: "https://escolas-melide-default-rtdb.europe-west1.firebasedatabase.app/"
+    };
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    window.dbRef = firebase.database().ref('melide_db');
+
+    // Creamos la función de guardado universal
+    window.saveData = function() {
+        localStorage.setItem('melide_db', JSON.stringify(db));
+        if (window.dbRef) {
+            window.dbRef.set(db);
+            console.log("Sincronizado con Firebase con éxito");
+        }
+    };
+
+    // Escuchamos la nube para actualizar el PC/Móvil
+    window.dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            db = data;
+            if (typeof renderAll === 'function') renderAll();
+        }
+    });
 }
 </script>
 </body>

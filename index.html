@@ -267,11 +267,14 @@
         });
     }
 
-    function toggleMonitorLogin() {
-    const role = document.getElementById('user-role').value;
-    const monitorSelect = document.getElementById('login-monitor-select');
-    if (monitorSelect) {
-        monitorSelect.style.display = (role === 'monitor') ? 'block' : 'none';
+   function toggleMonitorLogin(val) {
+    const area = document.getElementById('login-monitor-area');
+    const sel = document.getElementById('id-monitor-login');
+    if (val === 'monitor') {
+        area.style.display = 'block';
+        sel.innerHTML = db.Monitores.map(m => `<option value="${m.nome}">${m.nome}</option>`).join('');
+    } else {
+        area.style.display = 'none';
     }
 }
 
@@ -282,6 +285,8 @@ function login() {
         
         userRole = roleElem.value;
         const monitorElem = document.getElementById('id-monitor-login');
+        
+        // Determinamos si es técnico o monitor específico
         monitorActivo = (userRole === 'monitor' && monitorElem) ? monitorElem.value : 'todos';
 
         const menu = document.getElementById('menu-container');
@@ -289,18 +294,37 @@ function login() {
         
         menu.innerHTML = '';
 
+        // Definición de pestañas (CORREGIDA LA COMA FALTANTE)
         let tabs = [
             {id: 'Monitores', icon: '👥'}, 
             {id: 'Actividades', icon: '🏆'}, 
             {id: 'Aulas', icon: '🏠'}, 
             {id: 'Alumnos', icon: '🎓'}, 
             {id: 'Horarios', icon: '🗓️'}
-            {id: 'Configuración', icon: '⚙️'} // <-- AÑADE ESTA LÍNEA (fíjate en la coma anterior)
         ];
 
+        // Solo añadimos Configuración si es Técnico
         if (userRole === 'tecnico') {
             tabs.push({id: 'Config', icon: '⚙️'});
         }
+
+        tabs.forEach(tab => {
+            const card = document.createElement('div');
+            card.className = 'menu-card';
+            card.onclick = function() { renderSection(tab.id); };
+            card.innerHTML = `<div style="font-size:2.2rem">${tab.icon}</div><h3>${tab.id}</h3>`;
+            menu.appendChild(card);
+        });
+
+        // Cambiar de pantalla
+        nav('scr-dash');
+        console.log("Login exitoso como:", userRole, "Monitor:", monitorActivo);
+
+    } catch (error) {
+        console.error("Error crítico en login:", error);
+        alert("Error de ejecución. Revisa que no falten llaves en el código.");
+    }
+}
 
         tabs.forEach(tab => {
             const card = document.createElement('div');
@@ -1122,23 +1146,28 @@ function saveAlumnoTlfs(nome) {
     const cleanNome = nome.trim().toUpperCase();
     const inputs = document.querySelectorAll('.alumno-tlf-input');
     
-    // Unimos todos los valores de los inputs con el separador |
+    // Unimos todos los teléfonos con el separador |
     const tlfsNuevos = Array.from(inputs)
         .map(i => i.value.trim())
         .filter(t => t !== "")
         .join('|'); 
 
-    // Actualizamos al alumno en todas las actividades donde aparezca
+    // Actualizamos al alumno en todas sus inscripciones
+    let encontrado = false;
     db.Alumnos.forEach(a => {
         if (a.nome.trim().toUpperCase() === cleanNome) {
             a.tlfs = tlfsNuevos;
+            encontrado = true;
         }
     });
 
-    saveData();
-    closeModal();
-    filterCurrentData(); // Para refrescar la lista principal
-    alert("Datos de contacto actualizados");
+    if(encontrado) {
+        saveData();
+        closeModal();
+        // Intentamos refrescar la vista actual si existe la función
+        if (typeof filterCurrentData === 'function') filterCurrentData();
+        alert("Datos de contacto actualizados correctamente");
+    }
 }
 // --- NUEVAS FUNCIONES DE CONTROL DE TELÉFONOS ---
 
@@ -1241,23 +1270,59 @@ function saveAlumnoTlfs(nome) {
     }
    
 function renderConfig() {
-    const cont = document.getElementById('app-content');
+    const cont = document.getElementById('data-container');
     if (!cont) return;
 
-    // Usamos variables simples para evitar errores de comillas
-    let htmlEmergencia = '<div class="card" style="color:black; padding:20px; margin-bottom:20px; border:2px solid red; background:white;">';
-    htmlEmergencia += '<h3 style="color:red; margin-top:0;">🛠️ RECUPERACIÓN DE DATOS</h3>';
-    htmlEmergencia += '<textarea id="texto-emergencia" style="width:100%; height:80px; border:1px solid #ccc;"></textarea>';
-    htmlEmergencia += '<button onclick="importacionForzada()" style="background:red; color:white; padding:10px; border:none; border-radius:5px; width:100%; margin-top:10px; cursor:pointer; font-weight:bold;">FORZAR CARGA</button>';
-    htmlEmergencia += '</div>';
+    let html = `
+        <div style="background:white; padding:20px; border-radius:15px; color:black; margin-bottom:20px; border:2px solid #ef4444;">
+            <h3 style="color:#ef4444; margin-top:0;">🛠️ RECUPERACIÓN DE DATOS (IMPORTAR)</h3>
+            <p style="font-size:0.8rem; color:#64748b;">Pega aquí el código de un backup previo para restaurar el sistema.</p>
+            <textarea id="texto-emergencia" style="width:100%; height:100px; border:1px solid #ddd; border-radius:8px; padding:10px; font-family:monospace; font-size:10px;" placeholder="Pegue aquí el JSON..."></textarea>
+            <button onclick="importacionForzada()" style="background:#ef4444; color:white; padding:12px; border:none; border-radius:8px; width:100%; margin-top:10px; cursor:pointer; font-weight:bold;">FORZAR CARGA DE DATOS</button>
+        </div>
 
-    let htmlNormal = '<div class="card" style="color:black; padding:20px; background:white;">';
-    htmlNormal += '<h3 style="margin-top:0">Configuración</h3>';
-    htmlNormal += '<button class="btn-main" onclick="exportarDatos()" style="width:100%; background:#059669; margin-bottom:10px; color:white; border:none; padding:10px; border-radius:5px;">📤 Exportar Backup</button>';
-    htmlNormal += '<button class="btn-main" onclick="borrarTodo()" style="width:100%; background:#dc2626; color:white; border:none; padding:10px; border-radius:5px;">⚠️ Borrar Todo</button>';
-    htmlNormal += '</div>';
+        <div style="background:white; padding:20px; border-radius:15px; color:black;">
+            <h3 style="margin-top:0">GESTIÓN DE COPIAS Y SISTEMA</h3>
+            <button class="btn" onclick="exportarDatos()" style="width:100%; background:#059669; margin-bottom:10px; color:white;">📤 EXPORTAR BACKUP (JSON)</button>
+            <button class="btn" onclick="borrarTodo()" style="width:100%; background:#dc2626; color:white;">⚠️ BORRAR TODA LA BASE DE DATOS</button>
+        </div>
+    `;
+    cont.innerHTML = html;
+}
 
-    cont.innerHTML = htmlEmergencia + htmlNormal;
+function exportarDatos() {
+    const dataStr = JSON.stringify(db, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_escolas_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+}
+
+function importacionForzada() {
+    const txt = document.getElementById('texto-emergencia').value;
+    try {
+        const parsed = JSON.parse(txt);
+        if (parsed.Alumnos && parsed.Actividades) {
+            db = parsed;
+            saveData();
+            alert("Datos importados con éxito.");
+            location.reload();
+        } else {
+            alert("El formato del JSON no es válido.");
+        }
+    } catch (e) {
+        alert("Error al procesar el texto. Asegúrate de que sea un JSON válido.");
+    }
+}
+
+function borrarTodo() {
+    if (confirm("¿ESTÁS SEGURO? Se borrarán todos los alumnos, monitores y actividades. Esta acción es irreversible.")) {
+        db = { Monitores: [], Aulas: [], Actividades: [], Alumnos: [] };
+        saveData();
+        location.reload();
+    }
 }
     
    

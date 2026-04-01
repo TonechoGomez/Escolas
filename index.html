@@ -235,26 +235,27 @@
     const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Lunes-Miércoles", "Martes-Jueves"];
     
     // --- NOVO BLOQUE PARA FIREBASE ---
-let db = { 
-    Monitores: [], 
-    Aulas: [{nome: 'PARROQUIAS', espacios:["MACEDA", "FURELOS", "MOLDES", "GROBAS", "SANTALLA", "SAN MARTIÑO", "SAN SALVADOR"]}], 
-    Actividades: [], 
-    Alumnos: [] 
+// --- SUSTITUYE TU DECLARACIÓN DE 'db' POR ESTA ---
+
+// 1. Intentamos recuperar los datos del "cajón" del navegador (localStorage)
+let savedData = localStorage.getItem('melide_db_v1'); 
+
+// 2. Si existen datos guardados, los usamos. Si no, creamos la estructura vacía.
+let db = savedData ? JSON.parse(savedData) : {
+    Alumnos: [],
+    Monitores: [],
+    Actividades: [],
+    Aulas: [
+        { nome: 'PABELLÓN MUNICIPAL', espacios: ['PISTA CENTRAL', 'SALA 1', 'SALA 2'] },
+        { nome: 'PISCINA MUNICIPAL', espacios: ['VASO GRANDE', 'VASO PEQUEÑO', 'SALA FITNESS'] },
+        { nome: 'PARROQUIAS', espacios: [] }
+    ]
 };
 
-// Escoitar cambios en tempo real desde Google Firebase
-dbRef.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        db = data;
-        console.log("Sincronizado coa nube de Melide");
-        // Esta función "pinta" de novo toda a web cos datos que acaban de chegar
-        if (typeof renderAll === 'function') {
-            renderAll(); 
-        }
-    } else {
-        console.log("A nube está baleira. Carga o teu JSON en Configuración.");
-    }
+// 3. Función para guardar (Asegúrate de que el nombre 'melide_db_v1' sea igual arriba)
+function saveData() {
+    localStorage.setItem('melide_db_v1', JSON.stringify(db));
+}
 });
 // ---------------------------------
 
@@ -1215,21 +1216,38 @@ function importarDatos(event) {
             // Limpia caracteres invisibles que rompen el JSON
             contenido = contenido.replace(/^\uFEFF/, ""); 
             const datos = JSON.parse(contenido);
+
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos?')) {
-                    db = datos;
-                    if(!db.Alumnos) db.Alumnos = [];
+                if (confirm('¿Cargar estos datos? Esto sobrescribirá la información actual.')) {
+                    
+                    // ASEGURAMOS QUE TODAS LAS TABLAS EXISTAN PARA QUE NO DE ERROR
+                    db = {
+                        Alumnos: datos.Alumnos || [],
+                        Monitores: datos.Monitores || [],
+                        Actividades: datos.Actividades || [],
+                        Aulas: datos.Aulas || []
+                    };
+
+                    // Procesamiento específico de teléfonos que ya tenías
                     db.Alumnos.forEach(al => {
-                        if (al.phoneList && Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
+                        if (al.phoneList && Array.isArray(al.phoneList)) {
+                            al.tlfs = al.phoneList.join(' | ');
+                        }
                         if (al.tlfs === undefined) al.tlfs = "";
                     });
+
+                    // GUARDADO EFECTIVO
                     saveData();
-                    alert('¡IMPORTACIÓN CORRECTA!');
-                    location.reload();
+                    
+                    alert('¡IMPORTACIÓN CORRECTA! La página se reiniciará.');
+                    
+                    // Forzamos el recargo para que la interfaz lea el nuevo localStorage
+                    window.location.href = window.location.pathname; 
                 }
             }
         } catch (err) {
-            alert('ERROR: El archivo no es válido o tiene un formato de texto incorrecto.');
+            console.error(err);
+            alert('ERROR: El archivo no es válido. Revisa la consola para más detalles.');
         }
     };
     reader.readAsText(file);

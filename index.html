@@ -228,82 +228,36 @@
 </div>
 
 <script>
-    let currentSection = '';
-    let monitorActivo = 'todos';
-    let currentView = 'scr-inicio';
-    let userRole = 'tecnico';
-    const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Lunes-Miércoles", "Martes-Jueves"];
-    
-    // --- NOVO BLOQUE PARA FIREBASE ---
-// --- SUSTITUYE TU DECLARACIÓN DE 'db' POR ESTA ---
+    // 1. CARGA DE DATOS
+    const STORAGE_KEY = 'melide_db_v1';
+    let savedData = localStorage.getItem(STORAGE_KEY);
+    let db;
 
-// 1. Intentamos recuperar los datos del "cajón" del navegador (localStorage)
-let savedData = localStorage.getItem('melide_db_v1'); 
-
-// 2. Si existen datos guardados, los usamos. Si no, creamos la estructura vacía.
-let db = savedData ? JSON.parse(savedData) : {
-    Alumnos: [],
-    Monitores: [],
-    Actividades: [],
-    Aulas: [
-        { nome: 'PABELLÓN MUNICIPAL', espacios: ['PISTA CENTRAL', 'SALA 1', 'SALA 2'] },
-        { nome: 'PISCINA MUNICIPAL', espacios: ['VASO GRANDE', 'VASO PEQUEÑO', 'SALA FITNESS'] },
-        { nome: 'PARROQUIAS', espacios: [] }
-    ]
-};
-
-// 3. Función para guardar (Asegúrate de que el nombre 'melide_db_v1' sea igual arriba)
-function saveData() {
-    localStorage.setItem('melide_db_v1', JSON.stringify(db));
-}
-});
-// ---------------------------------
-
-    // AUTO-REPARACIÓN DE DATOS (Se ejecuta al cargar para limpiar errores previos)
-    function repairDB() {
-        db.Actividades.forEach(a => {
-            if(a.nome) a.nome = a.nome.trim().toUpperCase();
-            if(a.monitor) a.monitor = a.monitor.trim().toUpperCase();
-            if(a.aula) a.aula = a.aula.trim().toUpperCase();
-        });
-        db.Alumnos.forEach(a => {
-            if(a.nome) a.nome = a.nome.trim().toUpperCase();
-            if(a.act) a.act = a.act.trim().toUpperCase();
-        });
-        db.Monitores.forEach(m => {
-            if(m.nome) m.nome = m.nome.trim().toUpperCase();
-        });
-        saveData();
+    try {
+        db = savedData ? JSON.parse(savedData) : {
+            Alumnos: [], Monitores: [], Actividades: [], Aulas: [
+                { nome: 'PABELLÓN MUNICIPAL', espacios: ['PISTA CENTRAL', 'SALA 1', 'SALA 2'] },
+                { nome: 'PISCINA MUNICIPAL', espacios: ['VASO GRANDE', 'VASO PEQUEÑO', 'SALA FITNESS'] },
+                { nome: 'PARROQUIAS', espacios: [] }
+            ]
+        };
+    } catch (e) {
+        db = { Alumnos: [], Monitores: [], Actividades: [], Aulas: [] };
     }
-    repairDB();
-    
+
+    // 2. FUNCIÓN GUARDAR
     function saveData() {
-    // Seguimos guardando en local por seguridad, pero también enviamos a la nube
-    localStorage.setItem('melide_db', JSON.stringify(db));
-    dbRef.set(db); 
-}
-
-    function closeModal() {
-        document.getElementById('modal-overlay').classList.remove('active');
-        if(currentSection) filterCurrentData(); 
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
     }
 
-    function getSorted(array) { 
-        if(!array) return [];
-        return [...array].sort((a, b) => {
-            const n1 = (a.nome || "").toUpperCase();
-            const n2 = (b.nome || "").toUpperCase();
-            return n1.localeCompare(n2, undefined, {numeric: true, sensitivity: 'base'});
-        });
-    }
+    // 3. VARIABLES DE INTERFAZ
+    let currentSection = 'Inicio';
+    const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
-    function toggleMonitorLogin() {
-    const role = document.getElementById('user-role').value;
-    const monitorSelect = document.getElementById('login-monitor-select');
-    if (monitorSelect) {
-        monitorSelect.style.display = (role === 'monitor') ? 'block' : 'none';
+    // 4. FUNCIÓN LOGIN (Asegúrate de que empiece así)
+    function login() {
+        // ... aquí va el código de tu función login ...
     }
-}
 
 function login() {
     userRole = document.getElementById('user-role').value;

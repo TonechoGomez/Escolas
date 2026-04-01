@@ -1167,41 +1167,40 @@ function importarDatos(event) {
     reader.onload = function(e) {
         try {
             let contenido = e.target.result;
-            // Limpia caracteres invisibles que rompen el JSON
             contenido = contenido.replace(/^\uFEFF/, ""); 
             const datos = JSON.parse(contenido);
 
             if (datos && typeof datos === 'object') {
-                if (confirm('¿Cargar estos datos? Esto sobrescribirá la información actual.')) {
+                if (confirm('¿Cargar estos datos?')) {
                     
-                    // ASEGURAMOS QUE TODAS LAS TABLAS EXISTAN PARA QUE NO DE ERROR
+                    // RECONSTRUCCIÓN ESTRUCTURADA (Para evitar que se bloquee la interfaz)
+                    // Si alguna sección falta en el JSON, la creamos vacía []
                     db = {
-                        Alumnos: datos.Alumnos || [],
-                        Monitores: datos.Monitores || [],
-                        Actividades: datos.Actividades || [],
-                        Aulas: datos.Aulas || []
+                        Alumnos: Array.isArray(datos.Alumnos) ? datos.Alumnos : [],
+                        Monitores: Array.isArray(datos.Monitores) ? datos.Monitores : [],
+                        Actividades: Array.isArray(datos.Actividades) ? datos.Actividades : [],
+                        Aulas: Array.isArray(datos.Aulas) ? datos.Aulas : [
+                            { nome: 'PABELLÓN MUNICIPAL', espacios: ['PISTA CENTRAL', 'SALA 1', 'SALA 2'] },
+                            { nome: 'PISCINA MUNICIPAL', espacios: ['VASO GRANDE', 'VASO PEQUEÑO', 'SALA FITNESS'] },
+                            { nome: 'PARROQUIAS', espacios: [] }
+                        ]
                     };
 
-                    // Procesamiento específico de teléfonos que ya tenías
+                    // Procesamos los teléfonos como hacías antes
                     db.Alumnos.forEach(al => {
-                        if (al.phoneList && Array.isArray(al.phoneList)) {
-                            al.tlfs = al.phoneList.join(' | ');
-                        }
+                        if (al.phoneList && Array.isArray(al.phoneList)) al.tlfs = al.phoneList.join(' | ');
                         if (al.tlfs === undefined) al.tlfs = "";
                     });
 
-                    // GUARDADO EFECTIVO
+                    // GUARDADO Y RECARGA
                     saveData();
-                    
-                    alert('¡IMPORTACIÓN CORRECTA! La página se reiniciará.');
-                    
-                    // Forzamos el recargo para que la interfaz lea el nuevo localStorage
-                    window.location.href = window.location.pathname; 
+                    alert('¡IMPORTACIÓN CORRECTA! Se reiniciará la página para aplicar los cambios.');
+                    location.reload();
                 }
             }
         } catch (err) {
-            console.error(err);
-            alert('ERROR: El archivo no es válido. Revisa la consola para más detalles.');
+            console.error("Error detallado:", err);
+            alert('ERROR: El archivo JSON tiene un formato que el programa no puede leer.');
         }
     };
     reader.readAsText(file);
